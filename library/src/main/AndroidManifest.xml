@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.github.karthyks.crashlytics"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application>
+        <service android:name=".services.CrashSyncIntentService"/>
+        <service android:name=".services.LogDataIntentService"/>
+        <service
+            android:name=".services.CrashSyncJobService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+        <provider
+            android:name="com.github.karthyks.crashlytics.provider.CrashlyticsProvider"
+            android:authorities="${applicationId}.crashlytics.localstore"
+            android:exported="true"
+            android:enabled="true"/>
+    </application>
+
+</manifest>

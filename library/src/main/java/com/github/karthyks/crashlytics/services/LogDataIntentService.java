@@ -2,22 +2,18 @@ package com.github.karthyks.crashlytics.services;
 
 
 import android.app.IntentService;
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.OperationApplicationException;
 import android.net.Uri;
-import android.os.RemoteException;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
+import com.github.karthyks.crashlytics.dao.EventDAO;
 import com.github.karthyks.crashlytics.model.EventModel;
 import com.github.karthyks.crashlytics.provider.LocalStoreContract;
 import com.github.karthyks.crashlytics.transaction.EventTransaction;
 import com.github.karthyks.crashlytics.utils.CrashUtils;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,20 +63,11 @@ public class LogDataIntentService extends IntentService {
 
   private void saveLocal(EventModel eventModel) {
     String authority = LocalStoreContract.getAuthority(this);
-    Log.d(TAG, "saveLocal: " + authority);
     Uri eventUri = LocalStoreContract.getContentUri(authority,
         LocalStoreContract.EventStore.TABLE_NAME);
-    ArrayList<ContentProviderOperation> batch = new ArrayList<>();
     ContentResolver contentResolver = getContentResolver();
-    batch.add(ContentProviderOperation
-        .newInsert(eventUri)
-        .withValues(eventModel.toContentValues())
-        .build());
-    try {
-      contentResolver.applyBatch(authority, batch);
-    } catch (RemoteException | OperationApplicationException e) {
-      e.printStackTrace();
-    }
+    EventDAO eventDAO = new EventDAO(authority, contentResolver, eventUri);
+    eventDAO.insertOne(eventModel);
   }
 
   private void pushToCloud(EventModel eventModel) {

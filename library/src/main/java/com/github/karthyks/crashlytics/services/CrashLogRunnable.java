@@ -1,22 +1,19 @@
 package com.github.karthyks.crashlytics.services;
 
 
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.OperationApplicationException;
 import android.net.Uri;
-import android.os.RemoteException;
-import android.util.Log;
 
+import com.github.karthyks.crashlytics.dao.EventDAO;
 import com.github.karthyks.crashlytics.model.EventModel;
 import com.github.karthyks.crashlytics.provider.LocalStoreContract;
 import com.github.karthyks.crashlytics.transaction.EventTransaction;
 import com.github.karthyks.crashlytics.utils.CrashUtils;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
 public class CrashLogRunnable implements Runnable {
 
   private static final String TAG = CrashLogRunnable.class.getSimpleName();
@@ -67,19 +64,10 @@ public class CrashLogRunnable implements Runnable {
 
   private void saveLocal(EventModel eventModel) {
     String authority = LocalStoreContract.getAuthority(context);
-    Log.d(TAG, "saveLocal: " + authority);
+    ContentResolver contentResolver = context.getContentResolver();
     Uri eventUri = LocalStoreContract.getContentUri(authority,
         LocalStoreContract.EventStore.TABLE_NAME);
-    ArrayList<ContentProviderOperation> batch = new ArrayList<>();
-    ContentResolver contentResolver = context.getContentResolver();
-    batch.add(ContentProviderOperation
-        .newInsert(eventUri)
-        .withValues(eventModel.toContentValues())
-        .build());
-    try {
-      contentResolver.applyBatch(authority, batch);
-    } catch (RemoteException | OperationApplicationException e) {
-      e.printStackTrace();
-    }
+    EventDAO eventDAO = new EventDAO(authority, contentResolver, eventUri);
+    eventDAO.insertOne(eventModel);
   }
 }

@@ -1,5 +1,31 @@
 apply plugin: 'com.android.library'
 
+
+ext {
+    bintrayRepo = 'karthyks'
+    bintrayName = 'Crashlytics'
+
+    publishedGroupId = 'com.github.karthyks'
+    libraryName = 'Crashlytics'
+    artifact = 'crashlytics'
+
+    libraryDescription = 'A custom crashlytics library for Android.'
+
+    siteUrl = 'https://github.com/karthyks'
+    gitUrl = 'https://github.com/karthyks/Crashlytics-Android'
+    githubRepository = 'https://github.com/karthyks/Crashlytics-Android.git'
+
+    libraryVersion = '1.0.0'
+
+    developerId = 'karthyks'
+    developerName = 'karthik periasami'
+    developerEmail = 'mail2karthyk@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
 android {
     compileSdkVersion 27
     buildToolsVersion "27.0.1"
@@ -26,3 +52,6 @@ dependencies {
     provided 'com.android.support:appcompat-v7:27.0.1'
     testCompile 'junit:junit:4.12'
 }
+
+apply from: 'https://raw.githubusercontent.com/nisrulz/JCenter/master/installv1.gradle'
+apply from: 'https://raw.githubusercontent.com/nisrulz/JCenter/master/bintrayv1.gradle'

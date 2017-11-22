@@ -7,8 +7,6 @@ import android.support.annotation.NonNull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static com.github.karthyks.crashlytics.Preconditions.assertNotNull;
-
 public class Crashlytics {
   public static final String EVENT_EXCEPTION = "exception";
   static final String EVENT_CRASH = "crash";
@@ -57,6 +55,8 @@ public class Crashlytics {
   }
 
   private static void checkInstanceNotNull() {
-    assertNotNull(instance, "Must call \"init\" on Traxlytics first");
+    if (instance == null) {
+      throw new InstantiationError("Must call \"init\" on Crashlytics first");
+    }
   }
 }

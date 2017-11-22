@@ -1,1 +1,1 @@
-include ':library', ':sampleapp'
+include ':crashlytics', ':sampleapp'

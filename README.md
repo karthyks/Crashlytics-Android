@@ -26,13 +26,14 @@ public class CrashHandler extends CustomCrashEvent {
   }
 }
 
+```
+
 <br/>
 In case of any exception thrown in the onEventOccurred method, then the events are stored locally
  in the db. Once if there are any locally stored events found, then a background service will run
  every 15 minutes by default, which in turn keeps on triggering the onEventOccurred method, until it
  passes. The 15 minutes interval can be tweaked by changing CrashEvent.ALARM_FREQUENCY.
  <br/>
-```
 If your app has login feature, then the user info can be injected into the Crashlytics, to obtain info about the crashes and events once happened.
 
 ```java

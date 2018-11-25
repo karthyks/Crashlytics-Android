@@ -1,7 +1,7 @@
 package com.github.karthyks.crashlytics.sharedpref;
 
 
-import android.support.annotation.CheckResult;
+import androidx.annotation.CheckResult;
 
 public interface SharedPrefClient extends PrefHolder {
 

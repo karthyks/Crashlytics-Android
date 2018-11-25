@@ -2,17 +2,13 @@ package com.github.karthyks.crashlytics.transaction;
 
 
 import com.github.karthyks.crashlytics.Crashlytics;
-import com.github.karthyks.crashlytics.model.EventModel;
+import com.github.karthyks.crashlytics.data.Event;
 
 import java.util.List;
 
 public class EventTransaction {
 
-  public EventTransaction() {
-
-  }
-
-  public void postEvent(List<EventModel> eventModelList) throws Exception {
-    Crashlytics.customCrashEvent.onEventOccurred(eventModelList);
+  public void postEvent(List<Event> eventList) throws Exception {
+    Crashlytics.eventListener.onEventOccurred(eventList);
   }
 }

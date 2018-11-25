@@ -1,36 +1,33 @@
 package com.github.karthyks.crashlytics;
 
 
-import android.app.AlarmManager;
 import android.app.Application;
-import android.app.PendingIntent;
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
-import android.os.SystemClock;
 
-import com.github.karthyks.crashlytics.services.CrashLogRunnable;
-import com.github.karthyks.crashlytics.services.CrashSyncIntentService;
-import com.github.karthyks.crashlytics.services.CrashSyncJobService;
-import com.github.karthyks.crashlytics.services.LogDataIntentService;
+import com.github.karthyks.crashlytics.jobs.CrashLogRunnable;
+import com.github.karthyks.crashlytics.jobs.EventSyncWorker;
+import com.github.karthyks.crashlytics.jobs.NewEventWorker;
 import com.github.karthyks.crashlytics.sharedpref.SharedPref;
 import com.github.karthyks.crashlytics.sharedpref.SharedPrefClient;
 
-import static android.content.Context.ALARM_SERVICE;
-import static android.content.Context.JOB_SCHEDULER_SERVICE;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.TimeUnit;
+
+import androidx.work.BackoffPolicy;
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 class CrashEvent {
 
   private static final String SHARED_PREFERENCE_NAME = "crashlytics_preferences";
   private static final String PREFERENCE_COMPANY = "pref_company";
   private static final String PREFERENCE_USERNAME = "pref_username";
-  private static final int REQUEST_CRASH_SYNC = 0x011;
-  private static final long ALARM_FREQUENCY = 15 * 60 * 1000;
 
-  private Context context;
+  private WeakReference<Context> contextWeakReference;
 
   private SharedPrefClient sharedPrefClient;
 
@@ -48,30 +45,40 @@ class CrashEvent {
   CrashEvent(Application application) {
     mDefaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
     Thread.setDefaultUncaughtExceptionHandler(mCaughtExceptionHandler);
-    this.context = application.getApplicationContext();
-    sharedPrefClient = SharedPref.get(application.getApplicationContext(), SHARED_PREFERENCE_NAME);
-    scheduleSync();
+    this.contextWeakReference = new WeakReference<>(application.getApplicationContext());
+    sharedPrefClient = SharedPref.get(contextWeakReference.get(), SHARED_PREFERENCE_NAME);
   }
 
   void logEvent(String tag, String info) {
+    Context context = contextWeakReference.get();
+    if (context == null) return;
     if (tag.equals(Crashlytics.EVENT_CRASH)) {
       CrashLogRunnable runnable = new CrashLogRunnable(context, getCompany(), getUsername(),
           tag, info, System.currentTimeMillis());
       new Thread(runnable).start();
     } else {
-      context.startService(LogDataIntentService.getInstance(context, getCompany(), getUsername(),
-          tag, info));
+      OneTimeWorkRequest.Builder requestBuilder = new OneTimeWorkRequest.Builder(NewEventWorker.class)
+          .setBackoffCriteria(BackoffPolicy.LINEAR, 5, TimeUnit.MINUTES);
+      requestBuilder.build();
+      requestBuilder.setInputData(new Data.Builder()
+          .putString(NewEventWorker.EXTRA_COMPANY, getCompany())
+          .putString(NewEventWorker.EXTRA_USERNAME, getUsername())
+          .putString(NewEventWorker.EXTRA_EVENT_TAG, tag)
+          .putString(NewEventWorker.EXTRA_EVENT_INFO, info).build());
+      WorkManager.getInstance().enqueue(requestBuilder.build());
     }
   }
 
   void onLogin(String company, String username) {
     sharedPrefClient.putValue(PREFERENCE_COMPANY, company);
     sharedPrefClient.putValue(PREFERENCE_USERNAME, username);
+    scheduleSyncEvents();
   }
 
   void onLogout() {
     sharedPrefClient.putValue(PREFERENCE_COMPANY, "");
     sharedPrefClient.putValue(PREFERENCE_USERNAME, "");
+    cancelSyncEvents();
   }
 
   private String getUsername() {
@@ -82,35 +89,17 @@ class CrashEvent {
     return sharedPrefClient.getValue(PREFERENCE_COMPANY, "");
   }
 
-  private void scheduleSync() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      Intent syncIntent = new Intent(context, CrashSyncIntentService.class);
-      PendingIntent pendingSyncIntent = PendingIntent.getService(context, REQUEST_CRASH_SYNC,
-          syncIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-      AlarmManager alarm = (AlarmManager) context.getSystemService(ALARM_SERVICE);
-      alarm.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(),
-          ALARM_FREQUENCY, pendingSyncIntent);
-    } else {
-      ComponentName syncComponent = new ComponentName(context, CrashSyncJobService.class);
-      JobInfo.Builder builder = new JobInfo.Builder(REQUEST_CRASH_SYNC, syncComponent)
-          .setPeriodic(ALARM_FREQUENCY)
-          .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
-      JobScheduler scheduler = (JobScheduler) context.getSystemService(JOB_SCHEDULER_SERVICE);
-      scheduler.schedule(builder.build());
-    }
+  private void scheduleSyncEvents() {
+    Constraints constraints = new Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build();
+    PeriodicWorkRequest.Builder builder = new PeriodicWorkRequest.Builder(EventSyncWorker.class,
+        15, TimeUnit.MINUTES).setConstraints(constraints);
+    builder.addTag("crashlytics_event_sync");
+    builder.build();
   }
 
-  private void cancelSyncService() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      Intent syncIntent = new Intent(context, CrashSyncIntentService.class);
-      PendingIntent pendingSyncIntent = PendingIntent.getService(context, REQUEST_CRASH_SYNC,
-          syncIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-      AlarmManager alarm = (AlarmManager) context.getSystemService(ALARM_SERVICE);
-      alarm.cancel(pendingSyncIntent);
-    } else {
-      JobScheduler scheduler = (JobScheduler) context.getSystemService(JOB_SCHEDULER_SERVICE);
-      scheduler.cancel(REQUEST_CRASH_SYNC);
-    }
+  private void cancelSyncEvents() {
+    WorkManager.getInstance().cancelAllWorkByTag("crashlytics_event_sync");
   }
 }

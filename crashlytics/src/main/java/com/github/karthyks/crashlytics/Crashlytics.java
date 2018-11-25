@@ -2,10 +2,11 @@ package com.github.karthyks.crashlytics;
 
 
 import android.app.Application;
-import android.support.annotation.NonNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import androidx.annotation.NonNull;
 
 public class Crashlytics {
   public static final String EVENT_EXCEPTION = "exception";
@@ -13,13 +14,13 @@ public class Crashlytics {
   public static final String EVENT_LOGIN = "login";
 
   private static CrashEvent instance;
-  public static CustomCrashEvent customCrashEvent;
+  public static EventListener eventListener;
 
-  public static void init(@NonNull Application application, @NonNull CustomCrashEvent crashEvent) {
+  public static void init(@NonNull Application application, @NonNull EventListener eventListener) {
     if (instance != null) {
-      throw new IllegalStateException("Can be initialized only once!");
+      throw new IllegalStateException("Initialized more than once!");
     }
-    Crashlytics.customCrashEvent = crashEvent;
+    Crashlytics.eventListener = eventListener;
     instance = new CrashEvent(application);
   }
 

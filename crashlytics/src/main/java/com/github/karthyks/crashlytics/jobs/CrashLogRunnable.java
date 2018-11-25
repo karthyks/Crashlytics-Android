@@ -1,23 +1,20 @@
-package com.github.karthyks.crashlytics.services;
+package com.github.karthyks.crashlytics.jobs;
 
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.net.Uri;
 
-import com.github.karthyks.crashlytics.dao.EventDAO;
-import com.github.karthyks.crashlytics.model.EventModel;
-import com.github.karthyks.crashlytics.provider.LocalStoreContract;
+import com.github.karthyks.crashlytics.data.CrashlyticsDB;
+import com.github.karthyks.crashlytics.data.Event;
 import com.github.karthyks.crashlytics.transaction.EventTransaction;
 import com.github.karthyks.crashlytics.utils.CrashUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 
 public class CrashLogRunnable implements Runnable {
 
-  private static final String TAG = CrashLogRunnable.class.getSimpleName();
-  private Context context;
+  private WeakReference<Context> contextWeakReference;
   private String company;
   private String username;
   private String tag;
@@ -26,7 +23,7 @@ public class CrashLogRunnable implements Runnable {
 
   public CrashLogRunnable(Context context, String company, String username, String tag,
                           String info, long time) {
-    this.context = context;
+    contextWeakReference = new WeakReference<>(context);
     this.company = company;
     this.username = username;
     this.tag = tag;
@@ -36,8 +33,10 @@ public class CrashLogRunnable implements Runnable {
 
   @Override
   public void run() {
+    Context context = contextWeakReference.get();
+    if (context == null) return;
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
-    EventModel eventModel = new EventModel();
+    Event eventModel = new Event();
     eventModel.setAppName(CrashUtils.getApplicationName(context));
     eventModel.setAppVersion(CrashUtils.getAppVersion(context));
     eventModel.setAndroidVersion(CrashUtils.getOsVersion());
@@ -50,8 +49,8 @@ public class CrashLogRunnable implements Runnable {
     pushToCloud(eventModel);
   }
 
-  private void pushToCloud(EventModel eventModel) {
-    List<EventModel> eventModelList = new LinkedList<>();
+  private void pushToCloud(Event eventModel) {
+    List<Event> eventModelList = new LinkedList<>();
     eventModelList.add(eventModel);
     EventTransaction eventTransaction = new EventTransaction();
     try {
@@ -62,12 +61,9 @@ public class CrashLogRunnable implements Runnable {
     }
   }
 
-  private void saveLocal(EventModel eventModel) {
-    String authority = LocalStoreContract.getAuthority(context);
-    ContentResolver contentResolver = context.getContentResolver();
-    Uri eventUri = LocalStoreContract.getContentUri(authority,
-        LocalStoreContract.EventStore.TABLE_NAME);
-    EventDAO eventDAO = new EventDAO(authority, contentResolver, eventUri);
-    eventDAO.insertOne(eventModel);
+  private void saveLocal(Event eventModel) {
+    Context context = contextWeakReference.get();
+    if (context == null) return;
+    CrashlyticsDB.get(context).eventDao().insertEvent(eventModel);
   }
 }

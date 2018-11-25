@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Crashlytics.iml" filepath="$PROJECT_DIR$/Crashlytics.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Crashlytics-Android.iml" filepath="$PROJECT_DIR$/Crashlytics-Android.iml" />
       <module fileurl="file://$PROJECT_DIR$/crashlytics/crashlytics.iml" filepath="$PROJECT_DIR$/crashlytics/crashlytics.iml" />
       <module fileurl="file://$PROJECT_DIR$/sampleapp/sampleapp.iml" filepath="$PROJECT_DIR$/sampleapp/sampleapp.iml" />
     </modules>

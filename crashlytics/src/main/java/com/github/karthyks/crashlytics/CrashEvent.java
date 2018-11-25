@@ -97,6 +97,7 @@ class CrashEvent {
         15, TimeUnit.MINUTES).setConstraints(constraints);
     builder.addTag("crashlytics_event_sync");
     builder.build();
+    WorkManager.getInstance().enqueue(builder.build());
   }
 
   private void cancelSyncEvents() {

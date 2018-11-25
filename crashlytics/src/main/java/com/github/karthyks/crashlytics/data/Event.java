@@ -1,10 +1,13 @@
 package com.github.karthyks.crashlytics.data;
 
 import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
 @Entity
 public class Event {
 
+  @PrimaryKey(autoGenerate = true)
+  private long id;
   private String appName;
   private String appVersion;
   private String androidVersion;
@@ -85,5 +88,13 @@ public class Event {
 
   public void setTime(long time) {
     this.time = time;
+  }
+
+  public long getId() {
+    return id;
+  }
+
+  public void setId(long id) {
+    this.id = id;
   }
 }

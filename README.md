@@ -1,6 +1,6 @@
 
 # Crashlytics-Android
-[![Gradle](https://img.shields.io/badge/gradle-2.0.0--beta2-green.svg)](https://bintray.com/karthik-logs/karthyks/Crashlytics)
+[![Gradle](https://img.shields.io/badge/gradle-2.0.0--beta3-green.svg)](https://bintray.com/karthik-logs/karthyks/Crashlytics)
 [![Android Arsenal]( https://img.shields.io/badge/Android%20Arsenal-Crashlytics-green.svg?style=flat )]( https://android-arsenal.com/details/1/6509 )
 
 

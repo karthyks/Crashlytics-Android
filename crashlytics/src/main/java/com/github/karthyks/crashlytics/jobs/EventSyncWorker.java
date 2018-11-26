@@ -1,6 +1,7 @@
 package com.github.karthyks.crashlytics.jobs;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.github.karthyks.crashlytics.Crashlytics;
 import com.github.karthyks.crashlytics.data.CrashlyticsDB;
@@ -13,6 +14,7 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 public class EventSyncWorker extends Worker {
+  private static final String TAG = EventSyncWorker.class.getSimpleName();
 
   public EventSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
     super(context, workerParams);
@@ -21,6 +23,7 @@ public class EventSyncWorker extends Worker {
   @NonNull
   @Override
   public Result doWork() {
+    Log.d(TAG, "doWork: ");
     List<Event> events = CrashlyticsDB.get(getApplicationContext()).eventDao().getEvents();
     if (events != null && events.size() > 0) {
       try {

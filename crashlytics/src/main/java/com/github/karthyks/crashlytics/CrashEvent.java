@@ -16,10 +16,12 @@ import java.util.concurrent.TimeUnit;
 import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.Data;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
 
 class CrashEvent {
 
@@ -58,7 +60,8 @@ class CrashEvent {
       new Thread(runnable).start();
     } else {
       OneTimeWorkRequest.Builder requestBuilder = new OneTimeWorkRequest.Builder(NewEventWorker.class)
-          .setBackoffCriteria(BackoffPolicy.LINEAR, 5, TimeUnit.MINUTES);
+          .setBackoffCriteria(BackoffPolicy.LINEAR,
+              WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS);
       requestBuilder.build();
       requestBuilder.setInputData(new Data.Builder()
           .putString(NewEventWorker.EXTRA_COMPANY, getCompany())
@@ -94,10 +97,13 @@ class CrashEvent {
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build();
     PeriodicWorkRequest.Builder builder = new PeriodicWorkRequest.Builder(EventSyncWorker.class,
-        15, TimeUnit.MINUTES).setConstraints(constraints);
+        PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
+        .setConstraints(constraints);
     builder.addTag("crashlytics_event_sync");
     builder.build();
-    WorkManager.getInstance().enqueue(builder.build());
+    cancelSyncEvents();
+    WorkManager.getInstance().enqueueUniquePeriodicWork("crashlytics_event_sync",
+        ExistingPeriodicWorkPolicy.REPLACE, builder.build());
   }
 
   private void cancelSyncEvents() {
